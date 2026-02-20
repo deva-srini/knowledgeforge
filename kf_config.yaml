@@ -1,0 +1,44 @@
+source:
+  watch_folder: "./data/source"
+  staging_folder: "./data/staging"
+  file_patterns: ["*.pdf", "*.docx", "*.xlsx", "*.html", "*.pptx"]
+
+processing:
+  parsing:
+    library: "docling"
+    generate_page_images: false
+    generate_picture_images: false
+  extraction:
+    strategy: "auto"
+    save_picture_images: false
+    picture_images_dir: "./data/images"
+    describe_pictures: false
+    vision_model: "claude-haiku-4-5-20251001"
+    vision_api_key_env: "ANTHROPIC_API_KEY"
+  organisation:
+    enabled: true
+    table_format: "markdown"
+    markdown_generation: true
+  chunking:
+    strategy: "structure_aware"
+    chunk_size_tokens: 512
+    chunk_overlap_tokens: 50
+    skip_threshold_tokens: 1000
+  embedding:
+    provider: "sentence_transformers"
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    batch_size: 32
+    api_key_env: ""
+
+indexing:
+  vector_store: "chromadb"
+  chromadb_path: "./data/chromadb"
+  default_collection: "default"
+  collection_mapping: {}
+
+database:
+  url: "sqlite:///./data/knowledgeforge.db"
+
+observability:
+  langsmith_enabled: true
+  langsmith_project: "knowledgeforge"

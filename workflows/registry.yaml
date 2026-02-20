@@ -1,0 +1,5 @@
+workflows:
+  - name: "fund_factsheet"
+    config: "fund_factsheet.yaml"
+    active: true
+    description: "Process fund factsheet PDFs"

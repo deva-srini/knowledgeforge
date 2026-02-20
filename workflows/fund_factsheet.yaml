@@ -1,0 +1,33 @@
+source:
+  watch_folder: "./data/source/factsheets"
+  file_patterns: ["*.pdf"]
+
+processing:
+  parsing:
+    generate_page_images: true
+    generate_picture_images: true
+  extraction:
+    save_picture_images: true
+    # describe_pictures: true  # uncomment and set ANTHROPIC_API_KEY for Option B
+  chunking:
+    chunk_size_tokens: 256
+    chunk_overlap_tokens: 25
+
+stages:
+  parse:
+    enabled: true
+  extract:
+    enabled: true
+  transform:
+    enabled: true
+  chunk:
+    enabled: true
+  embed:
+    enabled: true
+  index:
+    enabled: true
+
+indexing:
+  default_collection: "fund_factsheets"
+
+force_rerun: false
