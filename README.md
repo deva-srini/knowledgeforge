@@ -6,8 +6,6 @@ KnowledgeForge is centred on [Docling](https://github.com/DS4SD/docling)'s deep 
 
 It is the *knowledge creation* layer of a larger Agentic RAG system, feeding a downstream Explorer agent.
 
-> **Status:** 13 of 17 tasks complete. Phases 0–10 done. Next: Metrics & Observability (Phase 11).
-
 ---
 
 ## Why Build This?
