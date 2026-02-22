@@ -103,50 +103,91 @@ class DocumentParser:
     def _get_converter(self) -> Any:
         """Lazily initialize and return the Docling DocumentConverter.
 
-        Configures the PDF pipeline for optimal performance on digital
-        (non-scanned) documents: disables OCR, uses native PDF text,
-        and enables GPU acceleration when available.
+        Dispatches to either the standard TableFormer pipeline or the VLM
+        pipeline based on ``config.processing.parsing.pipeline``.
 
         Returns:
             A Docling DocumentConverter instance configured for all
             supported formats.
         """
         if self._converter is None:
-            from docling.datamodel.base_models import InputFormat
-            from docling.datamodel.pipeline_options import (
-                AcceleratorOptions,
-                PdfPipelineOptions,
-                TableFormerMode,
-                TableStructureOptions,
-            )
-            from docling.document_converter import (
-                DocumentConverter,
-                PdfFormatOption,
-            )
-
-            parsing_cfg = self.config.processing.parsing
-            pdf_pipeline_options = PdfPipelineOptions(
-                do_ocr=False,
-                force_backend_text=True,
-                do_table_structure=True,
-                table_structure_options=TableStructureOptions(
-                    mode=TableFormerMode.FAST,
-                ),
-                do_picture_classification=False,
-                do_picture_description=False,
-                generate_page_images=parsing_cfg.generate_page_images,
-                generate_picture_images=parsing_cfg.generate_picture_images,
-                accelerator_options=AcceleratorOptions(device="auto"),
-            )
-
-            self._converter = DocumentConverter(
-                format_options={
-                    InputFormat.PDF: PdfFormatOption(
-                        pipeline_options=pdf_pipeline_options,
-                    ),
-                },
-            )
+            if self.config.processing.parsing.pipeline == "vlm":
+                self._converter = self._build_vlm_converter()
+            else:
+                self._converter = self._build_standard_converter()
         return self._converter
+
+    def _build_standard_converter(self) -> Any:
+        """Build the standard Docling DocumentConverter.
+
+        Configures the PDF pipeline for optimal performance on digital
+        (non-scanned) documents: disables OCR, uses native PDF text,
+        enables TableFormer structure recognition, and enables GPU
+        acceleration when available.
+
+        Returns:
+            A Docling DocumentConverter instance using the standard pipeline.
+        """
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import (
+            AcceleratorOptions,
+            PdfPipelineOptions,
+            TableFormerMode,
+            TableStructureOptions,
+        )
+        from docling.document_converter import (
+            DocumentConverter,
+            PdfFormatOption,
+        )
+
+        parsing_cfg = self.config.processing.parsing
+        pdf_pipeline_options = PdfPipelineOptions(
+            do_ocr=False,
+            force_backend_text=True,
+            do_table_structure=True,
+            table_structure_options=TableStructureOptions(
+                mode=TableFormerMode.FAST,
+            ),
+            do_picture_classification=False,
+            do_picture_description=False,
+            generate_page_images=parsing_cfg.generate_page_images,
+            generate_picture_images=parsing_cfg.generate_picture_images,
+            accelerator_options=AcceleratorOptions(device="auto"),
+        )
+
+        return DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_options=pdf_pipeline_options,
+                ),
+            },
+        )
+
+    def _build_vlm_converter(self) -> Any:
+        """Build a VLM-based Docling DocumentConverter.
+
+        Uses a configurable preset (e.g. ``granite_docling``) via
+        ``VlmConvertOptions.from_preset()``. The preset handles model
+        specification, engine selection, and image scaling automatically.
+
+        Returns:
+            A Docling DocumentConverter instance using the VLM pipeline.
+        """
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import VlmConvertOptions, VlmPipelineOptions
+        from docling.document_converter import DocumentConverter, PdfFormatOption
+
+        parsing_cfg = self.config.processing.parsing
+        logger.info("Initialising VLM pipeline with preset '%s'", parsing_cfg.vlm_model)
+
+        vlm_opts = VlmConvertOptions.from_preset(parsing_cfg.vlm_model)
+        pipeline_opts = VlmPipelineOptions(vlm_options=vlm_opts)
+
+        return DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_opts),
+            },
+        )
 
     def parse(self, file_path: str) -> ParseResult:
         """Parse a document and extract structural information.

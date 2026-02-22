@@ -1,7 +1,7 @@
 """Configuration loader and Pydantic validation for KnowledgeForge."""
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -31,6 +31,14 @@ class ParsingConfig(BaseModel):
         default="docling",
         description="Parsing library to use",
     )
+    pipeline: Literal["standard", "vlm"] = Field(
+        default="standard",
+        description="'standard' uses TableFormer PDF pipeline; 'vlm' uses a VLM model",
+    )
+    vlm_model: str = Field(
+        default="granite_docling",
+        description="VLM preset when pipeline='vlm'. Options: granite_docling, smoldocling, deepseek_ocr",
+    )
     generate_page_images: bool = Field(
         default=False,
         description="Render full-page images during PDF parsing (required for page-level image export)",
@@ -39,6 +47,15 @@ class ParsingConfig(BaseModel):
         default=False,
         description="Crop and store individual picture images during PDF parsing (enables get_image() on PictureItem)",
     )
+
+    @field_validator("pipeline")
+    @classmethod
+    def validate_pipeline(cls, v: str) -> str:
+        """Validate pipeline is a known value."""
+        valid = {"standard", "vlm"}
+        if v not in valid:
+            raise ValueError(f"pipeline must be one of {valid}, got '{v}'")
+        return v
 
 
 class ExtractionConfig(BaseModel):

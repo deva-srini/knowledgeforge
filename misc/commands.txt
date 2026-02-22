@@ -1,0 +1,24 @@
+cd /workspace/rag/knowledgeforge/backend && source /workspace/rag/knowledgeforge/.venv/bin/activate
+
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+Then in a separate terminal, process the travel PDF:                                                                                                                                                         
+
+  curl -X POST http://localhost:8000/api/v1/documents/process \
+    -H "Content-Type: application/json" \
+    -d '{"file_path": "/workspace/rag/knowledgeforge/reference/travel.pdf"}'
+
+  Other useful endpoints:
+
+  # Health check
+  curl http://localhost:8000/api/v1/health
+
+  # List all documents
+  curl http://localhost:8000/api/v1/documents
+
+  # Check metrics
+  curl http://localhost:8000/api/v1/metrics
+
+
+
+  python -m ipykernel install --user --name knowledgeforge --display-name "knowledgeforge"

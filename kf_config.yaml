@@ -6,6 +6,8 @@ source:
 processing:
   parsing:
     library: "docling"
+    pipeline: "standard"          # "standard" | "vlm"
+    vlm_model: "granite_docling"  # only used when pipeline: "vlm"
     generate_page_images: false
     generate_picture_images: false
   extraction:

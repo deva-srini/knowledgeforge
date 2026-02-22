@@ -1,11 +1,12 @@
 """Unit tests for the document parsing service."""
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
-from app.core.config import KnowledgeForgeConfig
+from app.core.config import KnowledgeForgeConfig, ParsingConfig
 from app.services.parsing import DocumentParser, ParseResult, _estimate_tokens
 
 # Paths to reference files
@@ -196,3 +197,69 @@ class TestParseResultDataclass:
         assert full.page_count == 5
         assert full.estimated_token_count == 1500
         assert full.content_types["table"] == 2
+
+
+class TestVlmPipelineConfig:
+    """Tests for VLM pipeline configuration and converter initialisation."""
+
+    def test_standard_pipeline_is_default(self) -> None:
+        """Test that the default pipeline is 'standard'."""
+        cfg = ParsingConfig()
+        assert cfg.pipeline == "standard"
+
+    def test_vlm_model_default(self) -> None:
+        """Test that vlm_model defaults to 'granite_docling'."""
+        cfg = ParsingConfig(pipeline="vlm")
+        assert cfg.vlm_model == "granite_docling"
+
+    def test_invalid_pipeline_raises(self) -> None:
+        """Test that an unknown pipeline value raises a ValidationError."""
+        with pytest.raises(ValidationError):
+            ParsingConfig(pipeline="unknown")
+
+    def test_vlm_converter_called_when_pipeline_vlm(
+        self, config: KnowledgeForgeConfig
+    ) -> None:
+        """Test that _build_vlm_converter is called when pipeline='vlm'."""
+        config.processing.parsing.pipeline = "vlm"
+        parser = DocumentParser(config)
+        with patch.object(
+            parser, "_build_vlm_converter", return_value=MagicMock()
+        ) as mock_vlm:
+            parser._get_converter()
+            mock_vlm.assert_called_once()
+
+    def test_standard_converter_called_by_default(
+        self, config: KnowledgeForgeConfig
+    ) -> None:
+        """Test that _build_standard_converter is called for the default pipeline."""
+        parser = DocumentParser(config)
+        with patch.object(
+            parser, "_build_standard_converter", return_value=MagicMock()
+        ) as mock_std:
+            parser._get_converter()
+            mock_std.assert_called_once()
+
+    def test_build_vlm_converter_uses_preset(
+        self, config: KnowledgeForgeConfig
+    ) -> None:
+        """Test that _build_vlm_converter calls VlmConvertOptions.from_preset with the configured model."""
+        config.processing.parsing.pipeline = "vlm"
+        config.processing.parsing.vlm_model = "granite_docling"
+        parser = DocumentParser(config)
+
+        mock_opts = MagicMock()
+        with patch(
+            "docling.datamodel.pipeline_options.VlmConvertOptions", mock_opts, create=True
+        ), patch(
+            "docling.datamodel.pipeline_options.VlmPipelineOptions", create=True
+        ), patch(
+            "docling.datamodel.base_models.InputFormat", create=True
+        ), patch(
+            "docling.document_converter.DocumentConverter", create=True
+        ), patch(
+            "docling.document_converter.PdfFormatOption", create=True
+        ):
+            parser._build_vlm_converter()
+
+        mock_opts.from_preset.assert_called_once_with("granite_docling")
