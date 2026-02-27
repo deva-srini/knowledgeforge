@@ -10,6 +10,20 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import (
+    AcceleratorOptions,
+    PdfPipelineOptions,
+    TableFormerMode,
+    TableStructureOptions,
+)
+from docling.document_converter import (
+    DocumentConverter,
+    PdfFormatOption,
+)
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import VlmConvertOptions, VlmPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 
 import tiktoken
 
@@ -128,17 +142,7 @@ class DocumentParser:
         Returns:
             A Docling DocumentConverter instance using the standard pipeline.
         """
-        from docling.datamodel.base_models import InputFormat
-        from docling.datamodel.pipeline_options import (
-            AcceleratorOptions,
-            PdfPipelineOptions,
-            TableFormerMode,
-            TableStructureOptions,
-        )
-        from docling.document_converter import (
-            DocumentConverter,
-            PdfFormatOption,
-        )
+        
 
         parsing_cfg = self.config.processing.parsing
         pdf_pipeline_options = PdfPipelineOptions(
@@ -173,9 +177,7 @@ class DocumentParser:
         Returns:
             A Docling DocumentConverter instance using the VLM pipeline.
         """
-        from docling.datamodel.base_models import InputFormat
-        from docling.datamodel.pipeline_options import VlmConvertOptions, VlmPipelineOptions
-        from docling.document_converter import DocumentConverter, PdfFormatOption
+        
 
         parsing_cfg = self.config.processing.parsing
         logger.info("Initialising VLM pipeline with preset '%s'", parsing_cfg.vlm_model)

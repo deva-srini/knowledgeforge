@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /workspace/knowledgeforge/backend/tests/*.py | tail -1)",
+      "Bash(find /workspace/knowledgeforge/.venv/lib/python3.11/site-packages/docling -name \"base.py\" -path \"*/inference_engines/vlm/*\" | head -1 | xargs ls -la)",
+      "Bash(python3 << 'EOF'\nimport sys\nsys.path.insert\\(0, '/workspace/knowledgeforge/.venv/lib/python3.11/site-packages'\\)\n\nfrom docling.datamodel.pipeline_options_vlm_model import ResponseFormat, TransformersModelType, TransformersPromptStyle, InferenceFramework\nfrom docling.datamodel.vlm_model_specs import VlmModelType\nfrom docling.models.inference_engines.vlm.base import VlmEngineType\n\nprint\\(\"=== ResponseFormat Enum Values ===\"\\)\nfor item in ResponseFormat:\n    print\\(f\"  {item.name}: {item.value}\"\\)\n\nprint\\(\"\\\\n=== InferenceFramework Enum Values ===\"\\)\nfor item in InferenceFramework:\n    print\\(f\"  {item.name}: {item.value}\"\\)\n\nprint\\(\"\\\\n=== VlmEngineType Enum Values ===\"\\)\nfor item in VlmEngineType:\n    print\\(f\"  {item.name}: {item.value}\"\\)\n\nprint\\(\"\\\\n=== VlmModelType Enum Values ===\"\\)\nfor item in VlmModelType:\n    print\\(f\"  {item.name}: {item.value}\"\\)\n\nprint\\(\"\\\\n=== TransformersModelType Enum Values ===\"\\)\nfor item in TransformersModelType:\n    print\\(f\"  {item.name}: {item.value}\"\\)\n\nprint\\(\"\\\\n=== TransformersPromptStyle Enum Values ===\"\\)\nfor item in TransformersPromptStyle:\n    print\\(f\"  {item.name}: {item.value}\"\\)\nEOF)",
+      "Bash(cd /workspace/knowledgeforge/backend && python -m pytest -v tests/test_parsing.py 2>&1)",
+      "Bash(cd /workspace/knowledgeforge/backend && python3 -m pytest -v tests/test_parsing.py 2>&1)",
+      "Bash(which pytest && pytest --version 2>&1 || true; which python && python --version 2>&1 || true)"
+    ]
+  }
+}
