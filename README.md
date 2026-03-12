@@ -65,15 +65,9 @@ The core is a **six-stage sequential pipeline**, with two post-indexing analysis
 
 - **Automated file watching** — drop a file into a watch folder and the full pipeline triggers automatically; no manual intervention needed.
 - **SHA-256 versioning** — identical file content is a no-op; changed content increments the version and triggers a clean re-index, with the full history preserved in SQLite.
-- **Multi-workflow support** — run `fund_factsheets`, `annual_reports`, and any other workflow simultaneously, each with its own watch folder, chunk size, and ChromaDB collection.
-- **Workflow hot-reload** — `WorkflowRegistryManager` syncs `workflows/registry.yaml` every 30 seconds; add or deactivate a workflow without restarting the server.
-- **Structure-aware chunking** — chunks respect header hierarchy and never split tables. Short documents (< 1000 tokens) are indexed as a single unit.
-- **Vector index summary** — `python cli.py summary` produces a TOML snapshot of all indexed collections: chunk counts, token totals, content types, and section headings per document.
-- **Overlap detection** — `python cli.py overlap --collection <name>` finds semantically duplicate chunks using cosine similarity; supports within-collection and cross-collection comparison.
-- **Vision / VLM integration** — optionally generate page and picture images during parsing, save them to disk, and describe them via Claude Haiku (requires `ANTHROPIC_API_KEY`).
+- **Multi-workflow support** — run `fund_factsheets`, `annual_reports`, and any other workflow simultaneously, each with its own watch folder, chunk size, and ChromaDB collection, hot-reloaded without restarting the service.
+- **Post-indexing analysis** — a vector index summarizer produces a structured TOML snapshot of all collections, and an overlap detector finds semantically duplicate content within or across collections using cosine similarity.
 - **Full lineage tracking** — every `Document`, `WorkflowRun`, and `WorkflowStage` record is persisted in SQLite with timestamps, token counts, and error messages.
-- **GPU-accelerated** — Docling and sentence-transformers both auto-detect CUDA; validated on NVIDIA A40 (46 GB VRAM).
-- **321 tests** — comprehensive unit and integration test coverage across all pipeline stages.
 
 ---
 
