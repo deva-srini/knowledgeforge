@@ -46,6 +46,9 @@ dependencies = [
 
     # Image support (used in extraction)
     "pillow>=11.3.0",
+
+    # TOML writing (vector index summary)
+    "tomli-w>=1.0.0",
 ]
 
 [tool.pytest.ini_options]

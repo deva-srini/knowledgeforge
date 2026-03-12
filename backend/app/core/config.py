@@ -210,6 +210,14 @@ class IndexingConfig(BaseModel):
         default_factory=dict,
         description="Mapping of file path patterns to collection names",
     )
+    summary_path: str = Field(
+        default="./data/vector_index_summary.toml",
+        description="Path for the auto-generated vector index summary TOML file",
+    )
+    document_descriptions: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping of file_name to human-readable document description",
+    )
 
 
 class DatabaseConfig(BaseModel):

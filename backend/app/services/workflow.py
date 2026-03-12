@@ -296,6 +296,24 @@ class WorkflowOrchestrator:
             document.status = "indexed"
             session.commit()
 
+            # Regenerate vector index summary after successful indexing
+            try:
+                from app.services.vector_index_summarizer import (
+                    VectorIndexSummarizer,
+                )
+
+                descriptions = self._collect_document_descriptions()
+                summarizer = VectorIndexSummarizer(self.config)
+                summary = summarizer.generate(
+                    document_descriptions=descriptions
+                )
+                summarizer.write_toml(summary)
+            except Exception:
+                logger.warning(
+                    "Failed to update vector index summary",
+                    exc_info=True,
+                )
+
             logger.info(
                 "Pipeline completed for '%s': %d chunks, %d tokens",
                 document.file_name,
@@ -376,3 +394,16 @@ class WorkflowOrchestrator:
         stage.started_at = now
         stage.completed_at = now
         session.commit()
+
+    def _collect_document_descriptions(self) -> dict:
+        """Merge document descriptions from base config and workflow config.
+
+        Returns:
+            Dict mapping file_name to description string.
+        """
+        descriptions: dict = dict(self.config.indexing.document_descriptions)
+        if self.workflow_config is not None:
+            descriptions.update(
+                self.workflow_config.indexing.document_descriptions
+            )
+        return descriptions

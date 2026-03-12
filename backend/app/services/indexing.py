@@ -84,7 +84,8 @@ class ChromaIndexer:
 
         collection_name = self._resolve_collection(file_path)
         collection = self._client.get_or_create_collection(
-            name=collection_name
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"},
         )
 
         ids: List[str] = []

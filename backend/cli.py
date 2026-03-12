@@ -224,6 +224,78 @@ def cmd_workflows(args: Any) -> None:
     print(f"\nTotal: {len(registry.workflows)} workflow(s)")
 
 
+def _collect_all_descriptions(config: Any) -> dict:
+    """Merge document descriptions from base config and all active workflows.
+
+    Args:
+        config: KnowledgeForgeConfig instance.
+
+    Returns:
+        Dict mapping file_name to description string.
+    """
+    descriptions: dict = dict(config.indexing.document_descriptions)
+    try:
+        from app.core.workflow_config import load_all_active_workflows
+
+        workflows = load_all_active_workflows(config)
+        for wf in workflows:
+            descriptions.update(wf.indexing.document_descriptions)
+    except FileNotFoundError:
+        pass
+    return descriptions
+
+
+def cmd_summary(args: Any) -> None:
+    """Generate a TOML summary of the vector index contents.
+
+    Args:
+        args: Parsed CLI arguments with optional --output.
+    """
+    config = load_config()
+    from app.services.vector_index_summarizer import VectorIndexSummarizer
+
+    descriptions = _collect_all_descriptions(config)
+    summarizer = VectorIndexSummarizer(config)
+    summary = summarizer.generate(document_descriptions=descriptions)
+
+    output_path = getattr(args, "output", None)
+    if output_path:
+        summarizer.write_toml(summary, output_path=output_path)
+    else:
+        summarizer.write_toml(summary)
+
+    target = output_path or config.indexing.summary_path
+    print(f"Summary written to: {target}")
+    print(f"  Collections: {summary.total_collections}")
+    print(f"  Total chunks: {summary.total_chunks}")
+
+
+def cmd_overlap(args: Any) -> None:
+    """Detect semantic overlaps in ChromaDB collections.
+
+    Args:
+        args: Parsed CLI arguments with --collection or --source/--target.
+    """
+    config = load_config()
+    from app.services.overlap_detection import OverlapDetector
+
+    detector = OverlapDetector(chromadb_path=config.indexing.chromadb_path)
+
+    if args.source and args.target:
+        report = detector.detect_cross_collection(
+            args.source, args.target, args.threshold, args.max_results
+        )
+    elif args.collection:
+        report = detector.detect_within_collection(
+            args.collection, args.threshold, args.max_results
+        )
+    else:
+        print("Error: specify --collection or --source/--target")
+        sys.exit(1)
+
+    report.print_report()
+
+
 def main() -> None:
     """Parse CLI arguments and dispatch to the appropriate command."""
     parser = argparse.ArgumentParser(
@@ -269,6 +341,42 @@ def main() -> None:
         "workflows", help="List registered workflows"
     )
     workflows_parser.set_defaults(func=cmd_workflows)
+
+    # summary command
+    summary_parser = subparsers.add_parser(
+        "summary", help="Generate TOML summary of vector index contents"
+    )
+    summary_parser.add_argument(
+        "--output", type=str, default=None,
+        help="Output file path (default: config summary_path)",
+    )
+    summary_parser.set_defaults(func=cmd_summary)
+
+    # overlap command
+    overlap_parser = subparsers.add_parser(
+        "overlap", help="Detect semantic overlaps in collections"
+    )
+    overlap_parser.add_argument(
+        "--collection", type=str,
+        help="Collection to scan for internal overlaps",
+    )
+    overlap_parser.add_argument(
+        "--source", type=str,
+        help="Source collection for cross-collection comparison",
+    )
+    overlap_parser.add_argument(
+        "--target", type=str,
+        help="Target collection for cross-collection comparison",
+    )
+    overlap_parser.add_argument(
+        "--threshold", type=float, default=0.85,
+        help="Similarity threshold (0.0-1.0, default: 0.85)",
+    )
+    overlap_parser.add_argument(
+        "--max-results", type=int, default=5,
+        help="Max similar chunks per query chunk (default: 5)",
+    )
+    overlap_parser.set_defaults(func=cmd_overlap)
 
     args = parser.parse_args()
     if not args.command:

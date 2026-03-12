@@ -37,6 +37,7 @@ indexing:
   chromadb_path: "./data/chromadb"
   default_collection: "default"
   collection_mapping: {}
+  summary_path: "./data/vector_index_summary.toml"
 
 database:
   url: "sqlite:///./data/knowledgeforge.db"
