@@ -3,7 +3,7 @@
 Runs each pipeline stage individually and inspects the intermediate
 outputs so you can see exactly what happens under the hood:
 
-  Parse -> Extract -> Transform -> Chunk -> Embed -> Index
+  Parse -> Extract -> Transform -> Chunk -> Embed -> Index -> Summarize -> Overlap
 
 Uses bgf_factsheet.pdf from the reference directory.
 
@@ -383,18 +383,83 @@ print()
 # ========================= POST-PIPELINE ====================================
 
 # ---------------------------------------------------------------------------
+# Stage 7: INDEX SUMMARY
+# ---------------------------------------------------------------------------
+print("=" * 70)
+print("STAGE 7  INDEX SUMMARY  (VectorIndexSummarizer)")
+print("=" * 70)
+
+from app.services.vector_index_summarizer import VectorIndexSummarizer  # noqa: E402
+
+summarizer = VectorIndexSummarizer(svc_config)
+t0 = time.time()
+descriptions = {doc.file_name: f"BGF factsheet (v{doc.version})"}
+summary = summarizer.generate(document_descriptions=descriptions)
+summary_time = time.time() - t0
+
+print(f"Time               : {summary_time:.2f}s")
+print(f"Collections scanned: {summary.total_collections}")
+print(f"Total chunks       : {summary.total_chunks}")
+print(f"Embedding model    : {summary.embedding_model}")
+print(f"Embedding dim      : {summary.embedding_dimension}")
+
+for col in summary.collections:
+    print(f"\nCollection: '{col.name}'")
+    print(f"  Chunks         : {col.total_chunks}")
+    print(f"  Content types  : {col.content_types}")
+    print(f"  Has embeddings : {col.has_embeddings}")
+    for d in col.documents:
+        print(f"\n  Document: '{d.file_name}' (v{d.version})")
+        print(f"    Chunks   : {d.chunks}")
+        print(f"    Tokens   : {d.tokens:,}")
+        print(f"    Types    : {d.content_types}")
+        print(f"    Sections : {d.sections[:5]}")
+
+summarizer.write_toml(summary)
+print(f"\nSummary written to: {svc_config.indexing.summary_path}\n")
+
+# ---------------------------------------------------------------------------
+# Stage 8: OVERLAP DETECTION
+# ---------------------------------------------------------------------------
+print("=" * 70)
+print("STAGE 8  OVERLAP DETECTION  (OverlapDetector)")
+print("=" * 70)
+
+from app.services.overlap_detection import OverlapDetector  # noqa: E402
+
+detector = OverlapDetector(chromadb_path=svc_config.indexing.chromadb_path)
+t0 = time.time()
+overlap_report = detector.detect_within_collection(
+    collection_name=index_result.collection_name,
+    similarity_threshold=0.85,
+)
+overlap_time = time.time() - t0
+
+print(f"Time              : {overlap_time:.2f}s")
+overlap_report.print_report()
+
+# ---------------------------------------------------------------------------
 # Timing summary
 # ---------------------------------------------------------------------------
 print("=" * 70)
 print("TIMING SUMMARY")
 print("=" * 70)
-total_time = parse_time + extract_time + transform_time + chunk_time + embed_time + index_time
-print(f"  {'Parse':<12} {parse_time:>7.2f}s  {'*' * int(parse_time / total_time * 40)}")
-print(f"  {'Extract':<12} {extract_time:>7.2f}s  {'*' * max(1, int(extract_time / total_time * 40))}")
-print(f"  {'Transform':<12} {transform_time:>7.2f}s  {'*' * max(1, int(transform_time / total_time * 40))}")
-print(f"  {'Chunk':<12} {chunk_time:>7.2f}s  {'*' * max(1, int(chunk_time / total_time * 40))}")
-print(f"  {'Embed':<12} {embed_time:>7.2f}s  {'*' * max(1, int(embed_time / total_time * 40))}")
-print(f"  {'Index':<12} {index_time:>7.2f}s  {'*' * max(1, int(index_time / total_time * 40))}")
+total_time = (
+    parse_time + extract_time + transform_time
+    + chunk_time + embed_time + index_time
+    + summary_time + overlap_time
+)
+for name, t in [
+    ("Parse", parse_time),
+    ("Extract", extract_time),
+    ("Transform", transform_time),
+    ("Chunk", chunk_time),
+    ("Embed", embed_time),
+    ("Index", index_time),
+    ("Summarize", summary_time),
+    ("Overlap", overlap_time),
+]:
+    print(f"  {name:<12} {t:>7.2f}s  {'*' * max(1, int(t / total_time * 40))}")
 print(f"  {'TOTAL':<12} {total_time:>7.2f}s")
 
 # ---------------------------------------------------------------------------
@@ -416,4 +481,5 @@ print(f"  Total tokens    : {total_tokens:,}")
 print(f"  Embedding dim   : {dim}")
 print(f"  Collection      : {index_result.collection_name}")
 print(f"  Indexed         : {index_result.total_indexed}")
+print(f"  Overlaps found  : {overlap_report.overlaps_found}")
 print(f"\nDemo complete!")

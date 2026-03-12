@@ -13,6 +13,7 @@ dependencies = [
     # ML / Embeddings
     "torch>=2.6.0; sys_platform == 'linux'",
     "torch>=2.2.0,<=2.2.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "numpy>=1.26.0,<2.0",
     "sentence-transformers>=3.0.0",
     "anthropic>=0.49.0",
 
@@ -67,6 +68,7 @@ environments = [
 # Allow flexible transitive dep versions for cross-platform compat
 override-dependencies = [
     "opencv-python>=4.10.0,<4.12; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "opencv-python>=4.10.0; sys_platform == 'linux' and platform_machine == 'x86_64'",
     "onnxruntime>=1.18.0,<1.21; sys_platform == 'darwin' and platform_machine == 'x86_64'",
-    "numpy<2.0; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "onnxruntime>=1.18.0; sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]

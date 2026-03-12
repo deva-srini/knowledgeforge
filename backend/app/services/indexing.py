@@ -110,12 +110,14 @@ class ChromaIndexer:
                 "token_count": chunk.token_count,
             })
 
-        collection.upsert(
-            ids=ids,
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas,
-        )
+        batch_size = 5000
+        for i in range(0, len(ids), batch_size):
+            collection.upsert(
+                ids=ids[i : i + batch_size],
+                embeddings=embeddings[i : i + batch_size],
+                documents=documents[i : i + batch_size],
+                metadatas=metadatas[i : i + batch_size],
+            )
 
         logger.info(
             "Indexed %d chunks into collection '%s' for document '%s'",
