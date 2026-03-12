@@ -1,3 +1,5 @@
+# This script is was used by me to setup the environment for the project on a new machine while running on cloud environmetns like runpod.
+
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -107,5 +109,5 @@ echo "========================================="
 
 
 
-git config --global user.email "devadotsrini@gmail.com"
-git config --global user.name "Deva"
+# git config --global user.email "devadotsrini@gmail.com"
+# git config --global user.name "Deva"
